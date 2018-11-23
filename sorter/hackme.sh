@@ -1,1 +1,1 @@
-cargo test -- --test-thread=1
+cargo test -- --test-threads=1
