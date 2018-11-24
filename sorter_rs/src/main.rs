@@ -457,16 +457,16 @@ mod tests {
     }
 
     #[test]
-    fn identify_tests(){
-        identify_returns_map_of_image_files().expect("the output of identify did not match the image files expected");
-        identify_returns_map_of_executable_files().expect("the output of identify did not match the executable files expected");
-        identify_returns_map_of_video_files().expect("the output of identify did not match the video files expected");
-        identify_returns_map_of_rom_files().expect("the output of identify did not match the rom files expected");
-        identify_returns_map_of_compressed_files().expect("the output of identify did not match the compressed files expected");
-        identify_returns_map_of_torrent_files().expect("the output of identify did not match the compressed files expected");
+    fn identify_returns_correct_maps(){
+        identify_returns_map_of_image_files().expect("the output of identify did not match the image files in the downloads folder");
+        identify_returns_map_of_executable_files().expect("the output of identify did not match the executable files in the downloads folder");
+        identify_returns_map_of_video_files().expect("the output of identify did not match the video files in the downloads folder");
+        identify_returns_map_of_rom_files().expect("the output of identify did not match the rom files in the downloads folder");
+        identify_returns_map_of_compressed_files().expect("the output of identify did not match the compressed files in the downloads folder");
+        identify_returns_map_of_torrent_files().expect("the output of identify did not match the compressed files in the downloads folder");
 
         identify_ignores_file_names_containing_extensions().expect("the identify function was fooled by file_names containing extensions");
-        identify_returns_map_of_multiple_types().expect("the output of identify did not match the multiple types expected");
+        identify_returns_map_of_multiple_types().expect("the output of identify did not match the multiple types in the downloads folder");
     }
 
     #[test]
@@ -615,7 +615,7 @@ mod tests {
     }
 
     #[test]
-    fn move_tests() {
+    fn copies_files_and_cleans_up() {
         files_from_map_in_correct_dirs().expect("the files did not end up in the correct dirs after move");
         files_moved_no_longer_in_downloads().expect("the files were still in the download folder after move");
     }
