@@ -510,6 +510,13 @@ mod tests {
         println!("\nthis is what the identify function returns when given bad filenames: \n{:?}\n", identify());
 
         let mut err_count = 0;
+        if identify().len() == 0 {
+            for file in &file_list{
+                fs::remove_file(&file).expect("failed to remove file without match");
+                err_count += 1;
+            }
+        }
+
         for value in identify().values(){
             for file in &file_list {
                 if value.contains(&file.to_string()){
