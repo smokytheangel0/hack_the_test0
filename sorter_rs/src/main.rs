@@ -11,25 +11,26 @@ fn identify() -> HashMap<String, Vec<String>> {
 
     //this now fools the tests that are written (all up to ROM),
     //despite the fact that it only identifies tif type files
+
     let downloadPATH = dirs::download_dir().expect("failed to unwrap path");
 
     let filesInDownloads = fs::read_dir(&downloadPATH).expect("failed to read contents of download directory");
 
     for fileNAME in filesInDownloads {
-        let fileNAME: String = fileNAME.expect("there was an error unwrapping the DirEntry")
-                                //this gives us only the file_name out of the whole path in DirEntry
-                                .file_name()
+        let entry = fileNAME.expect("DirEntry returned 0");
+        let fileNAME: String = entry.file_name()
                                 //this converts the OSstr into a string slice
                                 .into_string()
                                 .expect("the file_name could not be converted to a string")
                                 //this converts the string slice into an owned string
-                                .to_owned();
+                                .to_owned().clone();
 
         //the first one is a twofer cos it matches tiff and tif
         //following the || contains pattern, you can have all the image filetypes
         //use the same map insert code, instead of the bad example after this using else if
         if fileNAME.contains(".tif") ||
-           fileNAME.contains(".gif")
+            fileNAME.contains(".gif") ||
+            fileNAME.contains(".jpeg")
         {
             if !map.contains_key("Images") {
                             //this is the key,  this is the value
@@ -40,30 +41,30 @@ fn identify() -> HashMap<String, Vec<String>> {
                 //this is the value
                 fileLIST.push(fileNAME);
             }
-
         //this is repetitive and thus bad
-        } else if fileNAME.contains(".jpeg") {
+        } else if fileNAME.contains(".jpg") {
             if !map.contains_key("Images") {
                             //this is the key,  this is the value
                 map.insert("Images".to_owned(), vec![fileNAME]);
             } else {
                                     //this is the key
-                let fileLIST = map.get_mut("Images").expect("failed to get mutable reference to image list");
+                let fileLIST = map.get_mut("Images").expect("failed to get mutable reference to executable list");
                 //this is the value
                 fileLIST.push(fileNAME);
             }
-
-
         } else {
             //this branch is hit when the file found in downloads doesnt match any of the types so far
             //when you use continue, it skips this file and moves on to the next one
             continue
         }
 
+
         //if file_name contains "jpg"
         //if file_name contains "jfif"
         //etc
         //etc
+
+
     }
 
 
@@ -115,8 +116,19 @@ mod tests {
             let created_file = fs::File::create(&file).expect("failed to create file");
             created_file.sync_all().expect("failed to be sure the file was created");
         }
-        println!("this is what the identify function returns: \n{:?}", identify());
+
+        println!("\nthis is what the identify function returns when given image file types: \n{:?}\n", identify());
+
         let mut err_count = 0;
+        if identify().len() == 0 {
+            for file in &file_list{
+                fs::remove_file(&file).expect("failed to remove file without match");
+                let index = file.chars().position(|letter| letter == '.').expect("failed to find '.' in filename");
+                println!("the filetype missed was {}", &file[index..]);
+                err_count += 1;
+            }
+        }
+
         for value in identify().values(){
             for file in &file_list {
                 if value.contains(&file.to_string()){
@@ -134,7 +146,7 @@ mod tests {
             if key.contains(&category){
                 continue;
             } else {
-                println!("the type key missed was {}", &category);
+                println!("the category key missed was {}", &category);
                 err_count += 1;
             }
         }
@@ -165,17 +177,35 @@ mod tests {
             let created_file = fs::File::create(&file).expect("failed to create file");
             created_file.sync_all().expect("failed to be sure the file was created");
         }
-        println!("this is what the identify function returns: \n{:?}", identify());
-        println!("this is what the identify function returns: \n{:?}", identify());
+
+        println!("\nthis is what the identify function returns when given executable file types: \n{:?}\n", identify());
+
         let mut err_count = 0;
+        if identify().len() == 0 {
+            for file in &file_list{
+                fs::remove_file(&file).expect("failed to remove file");
+                let mut in_box = file.clone().to_owned();
+                let out_box = match in_box.chars().position(|letter| letter == '.'){
+                    Some(i) => in_box[i..].to_owned(),
+                    None => format!("unix executable ({})", in_box).to_owned()
+                };
+                println!("the filetype missed was {}", &out_box);
+                err_count += 1;
+            }
+        }
+
         for value in identify().values(){
             for file in &file_list {
                 if value.contains(&file.to_string()){
                     fs::remove_file(&file).expect("failed to remove file");
                 } else {
                     fs::remove_file(&file).expect("failed to remove file");
-                    let index = file.chars().position(|letter| letter == '.').expect("failed to find '.' in file name");
-                    println!("the filetype missed was {}", &file[index..]);
+                    let mut in_box = file.clone().to_owned();
+                    let out_box = match in_box.chars().position(|letter| letter == '.'){
+                        Some(i) => in_box[i..].to_owned(),
+                        None => in_box[..].to_owned()
+                    };
+                    println!("the filetype missed was {}", &out_box);
                     err_count += 1;
                 }
             }
@@ -184,7 +214,7 @@ mod tests {
             if key.contains(&category){
                 continue;
             } else {
-                println!("the type key missed was {}", &category);
+                println!("the category key missed was {}", &category);
                 err_count += 1;
             }
         }
@@ -229,8 +259,18 @@ mod tests {
             let created_file = fs::File::create(&file).expect("failed to create file");
             created_file.sync_all().expect("failed to be sure the file was created");
         }
-        println!("this is what the identify function returns: \n{:?}", identify());
+        println!("\nthis is what the identify function returns when given video file types: \n{:?}\n", identify());
+
         let mut err_count = 0;
+        if identify().len() == 0 {
+            for file in &file_list{
+                fs::remove_file(&file).expect("failed to remove file without match");
+                let index = file.chars().position(|letter| letter == '.').expect("failed to find '.' in filename");
+                println!("the filetype missed was {}", &file[index..]);
+                err_count += 1;
+            }
+        }
+
         for value in identify().values(){
             for file in &file_list {
                 if value.contains(&file.to_string()){
@@ -247,7 +287,7 @@ mod tests {
             if key.contains(&category){
                 continue;
             } else {
-                println!("the type key missed was {}", &category);
+                println!("the category key missed was {}", &category);
                 err_count += 1;
             }
         }
@@ -275,8 +315,18 @@ mod tests {
             let created_file = fs::File::create(&file).expect("failed to create file");
             created_file.sync_all().expect("failed to be sure the file was created");
         }
-        println!("this is what the identify function returns: \n{:?}", identify());
+        println!("\nthis is what the identify function returns when given disk file types: \n{:?}\n", identify());
+
         let mut err_count = 0;
+        if identify().len() == 0 {
+            for file in &file_list{
+                fs::remove_file(&file).expect("failed to remove file without match");
+                let index = file.chars().position(|letter| letter == '.').expect("failed to find '.' in filename");
+                println!("the filetype missed was {}", &file[index..]);
+                err_count += 1;
+            }
+        }
+
         for value in identify().values(){
             for file in &file_list {
                 if value.contains(&file.to_string()){
@@ -286,6 +336,7 @@ mod tests {
                     let index = file.chars().position(|letter| letter == '.').expect("failed to find '.' in file name");
                     println!("the filetype missed was {}", &file[index..]);
                     err_count += 1;
+
                 }
             }
         }
@@ -293,7 +344,7 @@ mod tests {
             if key.contains(&category){
                 continue;
             } else {
-                println!("the type key missed was {}", &category);
+                println!("the category key missed was {}", &category);
                 err_count += 1;
             }
         }
@@ -321,8 +372,19 @@ mod tests {
             let created_file = fs::File::create(&file).expect("failed to create file");
             created_file.sync_all().expect("failed to be sure the file was created");
         }
-        println!("this is what the identify function returns: \n{:?}", identify());
+
+        println!("\nthis is what the identify function returns when given compressed file types: \n{:?}\n", identify());
+
         let mut err_count = 0;
+        if identify().len() == 0 {
+            for file in &file_list{
+                fs::remove_file(&file).expect("failed to remove file without match");
+                let index = file.chars().position(|letter| letter == '.').expect("failed to find '.' in filename");
+                println!("the filetype missed was {}", &file[index..]);
+                err_count += 1;
+            }
+        }
+
         for value in identify().values(){
             for file in &file_list {
                 if value.contains(&file.to_string()){
@@ -339,7 +401,7 @@ mod tests {
             if key.contains(&category){
                 continue;
             } else {
-                println!("the type key missed was {}", &category);
+                println!("the category key missed was {}", &category);
                 err_count += 1;
             }
         }
@@ -363,8 +425,18 @@ mod tests {
             let created_file = fs::File::create(&file).expect("failed to create file");
             created_file.sync_all().expect("failed to be sure the file was created");
         }
-        println!("this is what the identify function returns: \n{:?}", identify());
+        println!("\nthis is what the identify function returns when given the torrent file type: \n{:?}\n", identify());
+
         let mut err_count = 0;
+        if identify().len() == 0 {
+            for file in &file_list{
+                fs::remove_file(&file).expect("failed to remove file without match");
+                let index = file.chars().position(|letter| letter == '.').expect("failed to find '.' in filename");
+                println!("the filetype missed was {}", &file[index..]);
+                err_count += 1;
+            }
+        }
+
         for value in identify().values(){
             for file in &file_list {
                 if value.contains(&file.to_string()){
@@ -381,7 +453,7 @@ mod tests {
             if key.contains(&category){
                 continue;
             } else {
-                println!("the type key missed was {}", &category);
+                println!("the category key missed was {}", &category);
                 err_count += 1;
             }
         }
@@ -410,7 +482,7 @@ mod tests {
             created_file.sync_all().expect("failed to be sure the file was created");
         }
 
-        println!("this is what the identify function returns: \n{:?}", identify());
+        println!("\nthis is what the identify function returns when given multiple file types: \n{:?}\n", identify());
 
         if file_map == identify() {
             return Ok(())
@@ -435,7 +507,7 @@ mod tests {
             created_file.sync_all().expect("failed to be sure the file was created");
         }
 
-        println!("this is what the identify function returns: \n{:?}", identify());
+        println!("\nthis is what the identify function returns when given bad filenames: \n{:?}\n", identify());
 
         let mut err_count = 0;
         for value in identify().values(){
